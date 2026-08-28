@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: secret_vault_postgres
+    environment:
+      POSTGRES_DB: secret_vault_db
+      POSTGRES_USER: vault_user
+      POSTGRES_PASSWORD: secret_password
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: secret_vault_redis
+    ports:
+      - "6379:6379"
