@@ -3,6 +3,7 @@ package com.savarachynskyi.vault.service;
 import com.savarachynskyi.vault.dto.request.CreateSecretRequest;
 import com.savarachynskyi.vault.dto.response.SecretResponse;
 import com.savarachynskyi.vault.entity.SecretMetadata;
+import com.savarachynskyi.vault.exception.SecretNotFoundException;
 import com.savarachynskyi.vault.mapper.SecretMapper;
 import com.savarachynskyi.vault.repository.SecretMetadataRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,20 +47,19 @@ public class SecretService {
     @Transactional
     public SecretResponse getAndBurnSecret(UUID id) {
         SecretMetadata metadata = metadataRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Secret not found"));
+                .orElseThrow(() -> new SecretNotFoundException("Secret with ID " + id + " not found"));
 
         if (metadata.isRead() || metadata.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new NoSuchElementException("Secret has expired or has already been read");
+            throw new SecretNotFoundException("Secret has expired or has already been read");
         }
 
         String content = redisSecretService.getAndDeleteSecret(id.toString());
 
         if (content == null) {
-            throw new NoSuchElementException("Secret content expired or unavailable");
+            throw new SecretNotFoundException("Secret content expired or unavailable");
         }
 
         metadata.setRead(true);
-        metadataRepository.save(metadata);
 
         return secretMapper.toResponse(metadata, content);
     }
